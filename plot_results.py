@@ -65,6 +65,7 @@ def main():
     ax3.set_xlabel("Pixel Value")
     ax3.set_ylabel("Frequency")
 
+    plt.tight_layout()
     plt.show()
 
 
