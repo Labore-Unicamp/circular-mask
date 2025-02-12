@@ -8,6 +8,22 @@ from scipy.ndimage import rotate
 
 
 def detect_regimes_wavelet(data, wavelet="mexh", max_level=12, threshold=1000):
+    """Detects regime changes in 1D signal using wavelet transform.
+
+    Args:
+        data (numpy.ndarray): 1D input signal array.
+        wavelet (str, optional): Wavelet type to use. Defaults to "mexh".
+        max_level (int, optional): Maximum decomposition level. Defaults to 12.
+        threshold (float, optional): Minimum amplitude threshold for peaks. Defaults to 1000.
+
+    Returns:
+        tuple: A pair of indices (first_change, last_change) representing the
+            boundaries of the detected regime.
+
+    Raises:
+        AttributeError: If the specified wavelet is not directly available and needs
+            to be created as a ContinuousWavelet object.
+    """
     scales = np.arange(1, max_level + 1)
 
     try:
@@ -27,7 +43,16 @@ def detect_regimes_wavelet(data, wavelet="mexh", max_level=12, threshold=1000):
 
 
 def get_rotated_coords(y, center, angle_deg):
-    """Convert 1D index to 2D coordinates after rotation"""
+    """Converts 1D index to 2D coordinates after rotation.
+
+    Args:
+        y (int): Y-coordinate before rotation.
+        center (int): Center point of rotation.
+        angle_deg (float): Rotation angle in degrees.
+
+    Returns:
+        tuple: A pair of integers (x, y) representing the rotated coordinates.
+    """
     # Convert angle to radians
     angle = np.radians(angle_deg)
 
@@ -47,9 +72,14 @@ def get_rotated_coords(y, center, angle_deg):
 
 
 def fit_circle(points):
-    """
-    Fit a circle to a set of 2D points using least squares optimization.
-    Returns the center coordinates (x, y) and radius r.
+    """Fits a circle to a set of 2D points using least squares optimization.
+
+    Args:
+        points (list): List of (x, y) coordinate pairs.
+
+    Returns:
+        tuple: Three floats (xc, yc, R) representing the center coordinates
+            and radius of the fitted circle.
     """
 
     def calc_R(xc, yc):
@@ -69,13 +99,31 @@ def fit_circle(points):
 
 
 def create_circular_mask(image_shape, center, radius):
-    """Create a circular mask for the image"""
+    """Creates a boolean mask for circular region in an image.
+
+    Args:
+        image_shape (tuple): Shape of the image (height, width).
+        center (tuple): (x, y) coordinates of circle center.
+        radius (float): Radius of the circle.
+
+    Returns:
+        numpy.ndarray: Boolean array where True indicates points inside the circle.
+    """
     Y, X = np.ogrid[: image_shape[0], : image_shape[1]]
     dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
     return dist_from_center <= radius
 
 
 def main():
+    """Main function to process core images and visualize circular masking.
+
+    Reads a binary file containing core image data, processes a single slice
+    to detect and fit a circle, creates a mask, and visualizes the results
+    using matplotlib.
+
+    Command line arguments:
+        sys.argv[1]: Path to the binary file containing core image data.
+    """
     with open(sys.argv[1], "rb") as f:
         core = np.fromfile(f, dtype=np.int16)
         core = core.reshape((core.size // 512**2, 512, 512))
