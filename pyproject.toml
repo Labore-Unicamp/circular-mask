@@ -10,4 +10,5 @@ dependencies = [
     "pyqt5>=5.15.11",
     "pywavelets>=1.8.0",
     "scipy>=1.15.1",
+    "tqdm>=4.67.1",
 ]

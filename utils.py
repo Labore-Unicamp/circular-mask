@@ -1,13 +1,9 @@
-import sys
-
-import matplotlib.pyplot as plt
 import numpy as np
 import pywt
 from scipy import optimize
-from scipy.ndimage import rotate
 
 
-def detect_regimes_wavelet(data, wavelet="mexh", max_level=12, threshold=1000):
+def detect_regimes(data, wavelet="mexh", max_level=12, threshold=1000):
     """Detects regime changes in 1D signal using wavelet transform.
 
     Args:
@@ -112,65 +108,3 @@ def create_circular_mask(image_shape, center, radius):
     Y, X = np.ogrid[: image_shape[0], : image_shape[1]]
     dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2)
     return dist_from_center <= radius
-
-
-def main():
-    """Main function to process core images and visualize circular masking.
-
-    Reads a binary file containing core image data, processes a single slice
-    to detect and fit a circle, creates a mask, and visualizes the results
-    using matplotlib.
-
-    Command line arguments:
-        sys.argv[1]: Path to the binary file containing core image data.
-    """
-    with open(sys.argv[1], "rb") as f:
-        core = np.fromfile(f, dtype=np.int16)
-        core = core.reshape((core.size // 512**2, 512, 512))
-
-    image = core[100].astype(np.float32)
-    center = image.shape[0] // 2
-
-    # Store image coordinates for sign changes
-    points = []
-
-    # Rotate image and find sign changes
-    for angle in range(0, 180, 5):
-        rotated = rotate(image, angle, reshape=False)
-        cord = rotated[:, center]
-        first, last = detect_regimes_wavelet(cord)
-
-        # Convert both points to image coordinates
-        rotated_first = get_rotated_coords(first, center, angle)
-        rotated_last = get_rotated_coords(last, center, angle)
-        points.extend((rotated_first, rotated_last))
-
-    x, y = zip(*points)
-    xc, yc, R = fit_circle(points)
-
-    mask = create_circular_mask(image.shape, (xc, yc), R)
-    masked_image = np.where(mask, image, np.nan)
-    values_inside_circle = image[mask]
-
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(30, 10))
-    # Original image with circle
-    ax1.imshow(image, cmap="gray")
-    circle = plt.Circle((xc, yc), R, fill=False, color="blue", label="Fitted Circle")
-    ax1.add_patch(circle)
-    ax1.scatter(x, y, c="red", s=20)
-    ax1.set_title("Original Image with Fitted Circle")
-
-    # Masked image
-    ax2.imshow(masked_image, cmap="gray")
-    ax2.set_title("Masked Image")
-
-    ax3.hist(values_inside_circle, bins=50, color="blue", alpha=0.7)
-    ax3.set_title("Histogram of Values Inside Circle")
-    ax3.set_xlabel("Pixel Value")
-    ax3.set_ylabel("Frequency")
-
-    plt.show()
-
-
-if __name__ == "__main__":
-    main()
