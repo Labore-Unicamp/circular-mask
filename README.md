@@ -47,7 +47,7 @@ source .venv/bin/activate
 
 ```bash
 # Process a core data file to generate masks
-uv run process_core.py --input path/to/core.raw
+uv run process_core.py --input path/to/core.raw --adjust 0.95
 ```
 
 This will generate a mask file with the suffix '_mask.raw'.

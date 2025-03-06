@@ -8,7 +8,7 @@ from tqdm import tqdm
 from utils import create_circular_mask, detect_regimes, fit_circle, get_rotated_coords
 
 
-def process_slice(slice_data):
+def process_slice(slice_data, adjust):
     """Processes a 2D core slice to detect and create a circular mask.
 
     This function performs the following steps:
@@ -52,6 +52,10 @@ def process_slice(slice_data):
 
     # Fit circle and create mask
     xc, yc, R = fit_circle(points)
+
+    if adjust != 1.0:
+        R *= adjust
+
     return create_circular_mask(image.shape, (xc, yc), R)
 
 
@@ -70,6 +74,7 @@ def main():
 
     Command-line Arguments:
         --input: Path to the input binary file containing core image data
+        --adjust: Adjustment parameter for circle fitting (default: 1.0)
 
     Output:
         Creates a new binary file with '_mask' suffix containing the generated
@@ -79,6 +84,12 @@ def main():
         description="Plot results from a binary file with circular mask."
     )
     parser.add_argument("--input", type=Path, help="Path to the input binary file")
+    parser.add_argument(
+        "--adjust",
+        type=float,
+        help="Adjustment parameter for circle fitting",
+        default=1.0,
+    )
     args = parser.parse_args()
 
     with open(args.input, "rb") as f:
@@ -89,7 +100,7 @@ def main():
 
     print("Processing slices...")
     for i in tqdm(range(core.shape[0])):
-        masks[i] = process_slice(core[i])
+        masks[i] = process_slice(core[i], args.adjust)
 
     masks.tofile(f"{args.input.stem}_mask.raw")
 
